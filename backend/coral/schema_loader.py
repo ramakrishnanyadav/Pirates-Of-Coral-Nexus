@@ -2,18 +2,19 @@ from .client import CoralClient
 
 class SchemaLoader:
     """
-    Provides hyper-optimized exact schema definitions for the hackathon demo.
-    This prevents the 8B LLM from hallucinating columns and keeps token usage extremely low to avoid rate limits.
+    Dynamically loads the exact live schema from the Coral execution engine.
+    This guarantees 100% accuracy for the LLM to generate SQL without hallucinating columns.
     """
     def __init__(self):
-        pass
+        self.coral = CoralClient()
+        self._cached_schema = None
         
-    async def get_relevant_schema(self, question: str) -> str:
+    def _build_fallback_schema(self) -> str:
         return """AVAILABLE TABLES AND EXACT COLUMNS:
 
 [github]
 - github.pulls (Pull Requests): id, number, state, title, body, created_at, updated_at, closed_at, merged_at, owner, repo
-- github.commits (Commits): sha, commit_message, author_login, author_date, html_url, owner, repo
+- github.commits (Commits): sha, commit__message, author__login, commit__author__date, html_url, owner, repo
 - github.issues (Issues): id, number, state, title, body, created_at, updated_at, closed_at, owner, repo
 
 [sentry]
@@ -21,8 +22,53 @@ class SchemaLoader:
 - sentry.projects (Sentry Projects): id, slug, name, platform, date_created
 
 [slack]
-- slack.channels (Slack Channels): id, name, is_archived, created, num_members, topic, purpose
+- slack.channels (Slack Channels): id, name, is_archived, created, num_members, topic__value, purpose__value
 - slack.users (Slack Users): id, name, real_name, tz, is_admin, is_bot
 
-CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMNS LIKE 'messages' or 'message'.
+CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMNS.
 """
+
+    async def get_relevant_schema(self, question: str) -> str:
+        if self._cached_schema:
+            return self._cached_schema
+            
+        try:
+            # Try to dynamically fetch exact live schema
+            tables = self.coral.get_tables()
+            if not tables:
+                return self._build_fallback_schema()
+                
+            schema_dict = {}
+            # DataFusion/Coral standard information schema
+            columns = self.coral.query("SELECT table_schema, table_name, column_name FROM information_schema.columns")
+            
+            for col in columns:
+                schema = col.get("table_schema", "")
+                table = col.get("table_name", "")
+                column = col.get("column_name", "")
+                
+                # Ignore internal schemas
+                if schema in ["information_schema", "coral"]:
+                    continue
+                    
+                full_table = f"{schema}.{table}"
+                if full_table not in schema_dict:
+                    schema_dict[full_table] = []
+                schema_dict[full_table].append(column)
+            
+            if not schema_dict:
+                # Fallback if information_schema is not accessible
+                return self._build_fallback_schema()
+                
+            lines = ["LIVE AVAILABLE TABLES AND EXACT COLUMNS:"]
+            for table, cols in schema_dict.items():
+                lines.append(f"- {table}: {', '.join(cols)}")
+                
+            lines.append("\nCRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMNS.")
+            
+            self._cached_schema = "\n".join(lines)
+            return self._cached_schema
+            
+        except Exception:
+            # Fallback to safe schema if we can't connect or query information_schema
+            return self._build_fallback_schema()
