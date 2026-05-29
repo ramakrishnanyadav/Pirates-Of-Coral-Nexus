@@ -170,11 +170,19 @@ CRITICAL API RESTRICTIONS:
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:
-        results_summary = json.dumps(results[:20], indent=2, default=str)
-        
-        system_prompt = """You are NEXUS, an engineering intelligence system. 
+        results_summary = json.dumps(results[:10], indent=2, default=str)
+        # CRITICAL: Truncate raw results to prevent blowing through Groq's 100k TPD limit
+        if len(results_summary) > 2000:
+            results_summary = results_summary[:2000] + "\n... [TRUNCATED DUE TO TOKEN LIMITS]"
+            
+        system_prompt = f"""You are NEXUS, an engineering intelligence system. 
 You receive data from a cross-source SQL query over GitHub, Sentry, Slack, Linear, Datadog, and PagerDuty.
 Your job is to reason over this unified data and give a structured engineering answer.
+
+USER QUESTION: {question}
+SQL: {sql}
+RAW DATA:
+{results_summary}
 
 ALWAYS structure your response as:
 ## Root Cause (2 sentences max)
@@ -186,7 +194,7 @@ ALWAYS structure your response as:
 Be specific. Cite commit SHAs, error IDs, Slack usernames, ticket IDs. Never be vague."""
 
         stream = await self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Question: {question}\n\nSQL Executed:\n{sql}\n\nData Returned:\n{results_summary}"}
