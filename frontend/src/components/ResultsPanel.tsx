@@ -4,10 +4,15 @@ import { CheckCircle2, ChevronRight } from "lucide-react";
 export function ResultsPanel({ events, isRunning }: { events: any[], isRunning: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Auto-scroll
+  // Smart auto-scroll that only triggers if the user is already near the bottom
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    const el = scrollRef.current;
+    if (el) {
+      const threshold = 150; // px
+      const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+      if (isNearBottom) {
+        el.scrollTop = el.scrollHeight;
+      }
     }
   }, [events]);
 
@@ -83,6 +88,21 @@ export function ResultsPanel({ events, isRunning }: { events: any[], isRunning: 
 function StatusEvent({ event }: { event: any }) {
   if (["reasoning", "answer", "done"].includes(event.type)) return null;
   
+  if (event.type === "error") {
+    return (
+      <div className="p-5 rounded-xl border border-red-500/20 bg-red-500/5 backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-300 shadow-[0_4px_25px_rgba(239,68,68,0.15)] relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-red-500/50 group-hover:bg-red-500 transition-colors"></div>
+        <div className="flex items-center gap-3 text-[10px] font-bold text-red-400 uppercase tracking-[0.2em] mb-3 font-mono">
+          <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+          Coral Engine Exception
+        </div>
+        <div className="text-xs font-mono text-gray-300 leading-relaxed break-words whitespace-pre-wrap pl-2 border-l border-white/5">
+          {event.message}
+        </div>
+      </div>
+    );
+  }
+  
   let text = "";
   let success = false;
   
@@ -96,7 +116,6 @@ function StatusEvent({ event }: { event: any }) {
     text = `Received ${event.row_count} correlated records`;
     success = true;
   }
-  if (event.type === "error") text = `Error: ${event.message}`;
   
   if (!text) return null;
   
@@ -104,12 +123,10 @@ function StatusEvent({ event }: { event: any }) {
     <div className="flex items-center gap-3 text-xs font-mono animate-in fade-in slide-in-from-left-2 duration-300">
       {success ? (
         <CheckCircle2 size={14} className="text-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] rounded-full" />
-      ) : event.type === "error" ? (
-        <span className="text-red-500">✗</span>
       ) : (
         <ChevronRight size={14} className="text-cyan-500 animate-pulse shadow-[0_0_8px_rgba(6,182,212,0.5)] rounded-full" />
       )}
-      <span className={event.type === "error" ? "text-red-400" : "text-gray-300 tracking-wide"}>{text}</span>
+      <span className="text-gray-300 tracking-wide">{text}</span>
     </div>
   );
 }

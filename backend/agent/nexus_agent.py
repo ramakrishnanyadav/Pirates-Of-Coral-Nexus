@@ -2,10 +2,13 @@ import os
 import json
 import re
 import time
+import logging
 from typing import AsyncIterator
 from openai import AsyncOpenAI
 from coral.client import CoralClient
 from coral.schema_loader import SchemaLoader
+
+logger = logging.getLogger("NEXUS.Agent")
 
 class NexusAgent:
     """
@@ -24,12 +27,14 @@ class NexusAgent:
         self.schema = SchemaLoader()
     
     async def investigate(self, question: str, context: dict) -> AsyncIterator[dict]:
+        logger.info(f"New investigation started: '{question}'")
         # Step 1: Load live Coral schema
         schema_context = await self.schema.get_relevant_schema(question)
         
         # Step 2: Generate SQL from natural language
         yield {"type": "thinking", "content": "Analyzing question and available data sources..."}
         sql = await self._generate_sql(question, schema_context, context)
+        logger.info(f"Generated SQL for execution:\n{sql}")
         yield {"type": "sql_generated", "sql": sql}
         
         # Step 3: Execute against Coral with Auto-Correction
@@ -38,6 +43,7 @@ class NexusAgent:
         error_msg = None
         
         for attempt in range(max_retries):
+            logger.info(f"Executing Coral SQL (Attempt {attempt+1}/{max_retries})...")
             yield {"type": "query_executing", "source_count": self._count_sources(sql)}
             try:
                 start_time = time.time()
@@ -48,6 +54,7 @@ class NexusAgent:
                     await __import__("asyncio").sleep(0.5 - exec_time)
                     exec_time = 0.5
                 
+                logger.info(f"Query execution succeeded in {exec_time}s. Retrieved {len(results)} rows.")
                 yield {
                     "type": "results_received", 
                     "row_count": len(results), 
@@ -57,24 +64,30 @@ class NexusAgent:
                 break
             except Exception as e:
                 error_msg = str(e)
+                logger.warning(f"Database error on attempt {attempt+1}: {error_msg}")
                 
                 # CRITICAL: Coral error messages can list thousands of valid columns if a schema mismatch occurs.
                 # We MUST truncate the error message to prevent blowing up the LLM context window (100k+ tokens).
                 safe_error_msg = error_msg if len(error_msg) < 1500 else error_msg[:1500] + "... [TRUNCATED FOR CONTEXT LIMIT]"
                 
                 if attempt < max_retries - 1:
+                    logger.info("Triggering 70B self-healing model to correct syntax...")
                     yield {"type": "thinking", "content": f"Database error detected. Self-correcting query... (Attempt {attempt+1}/{max_retries})"}
                     sql = await self._fix_sql(sql, safe_error_msg, schema_context, context)
+                    logger.info(f"Self-healed SQL query:\n{sql}")
                     yield {"type": "sql_generated", "sql": sql}
         
         if results is None:
+            logger.error(f"Investigation failed. Query failed after {max_retries} attempts. Last error: {error_msg}")
             yield {"type": "error", "message": f"Query failed after {max_retries} attempts: {error_msg}"}
             return
             
         # Step 4: Reason over results (streaming)
+        logger.info("Streaming reasoning engine analysis...")
         async for event in self._reason_over_results(question, sql, results):
             yield event
             
+        logger.info("Investigation finished successfully.")
         yield {"type": "done"}
         
     def _count_sources(self, sql: str) -> int:

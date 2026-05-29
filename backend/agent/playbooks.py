@@ -86,7 +86,7 @@ LEFT JOIN sentry.issues s
     ON sl.topic ILIKE '%' || s.project || '%'
 LEFT JOIN github.commits g
     ON CAST(g.commit__author__date AS TIMESTAMP) >= CAST(s.first_seen AS TIMESTAMP) - INTERVAL '4 hours'
-WHERE sl.name ILIKE '%incident%' OR sl.name ILIKE '%alert%'
+WHERE (sl.name ILIKE '%incident%' OR sl.name ILIKE '%alert%')
 AND g.owner = 'withcoral' AND g.repo = 'coral'
 ORDER BY sl.created DESC
 LIMIT 20"""

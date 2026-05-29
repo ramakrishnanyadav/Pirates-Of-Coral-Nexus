@@ -2,6 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import query, schema
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+)
+logger = logging.getLogger("NEXUS")
+logger.info("Initializing NEXUS FastAPI application...")
+
 app = FastAPI(title="NEXUS - Engineering War Room")
 
 app.add_middleware(
