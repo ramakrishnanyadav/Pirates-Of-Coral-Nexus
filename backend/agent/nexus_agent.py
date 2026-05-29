@@ -124,8 +124,9 @@ INSTRUCTIONS:
 1. Fix the SQL query to resolve the exact error reported by the database.
 2. Ensure you ONLY use the exact columns listed in the error message or schema. DO NOT invent columns.
 3. If the error mentions 'InSubquery' or 'Physical plan', rewrite the query to use an explicit JOIN instead of a subquery.
-4. If the error mentions 'coercion' or 'Interval', wrap the date column in CAST(column AS TIMESTAMP).
-5. Return ONLY the fixed SQL query, no explanation.
+4. If the error mentions '<constant>' or 'constant equality filter', you MUST replace any subqueries or variables in the WHERE clause with a hardcoded literal string (e.g. `repo = 'coral'`).
+5. If the error mentions 'coercion' or 'Interval', wrap the date column in CAST(column AS TIMESTAMP).
+6. Return ONLY the fixed SQL query, no explanation.
 """
         try:
             # Use the much smarter 70B model for self-healing since the token payload here is very small (<1500 tokens).
@@ -182,7 +183,8 @@ CRITICAL API RESTRICTIONS:
 - All github tables (github.pulls, github.commits, github.issues) REQUIRE a hardcoded `WHERE owner = <constant> AND repo = <constant>` filter (e.g., `owner = 'withcoral' AND repo = 'coral'`). You MUST include this in every query hitting GitHub.
 
 STRICT SQL DIALECT RULES (DATAFUSION):
-- NO SUBQUERIES IN WHERE CLAUSE: You CANNOT use `IN (SELECT ...)` or `EXISTS (SELECT ...)`. DataFusion's physical planner will crash. You MUST use explicit `JOIN`s instead.
+- NO SUBQUERIES ALLOWED: You CANNOT use `IN (SELECT ...)` or `= (SELECT ...)`. 
+- ONE SELECT RULE: Do NOT use the `SELECT` keyword more than ONCE in your entire query. You MUST use explicit `JOIN`s instead. DataFusion's physical planner will crash if you use subqueries.
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:
