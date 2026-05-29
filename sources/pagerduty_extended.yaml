@@ -1,0 +1,71 @@
+name: runbook_intel
+version: 0.1.0
+dsl_version: 3
+backend: http
+
+description: >
+  Runbook intelligence source. Connects your internal runbook URLs 
+  (Notion, Confluence, or static JSON) to make runbooks queryable
+  as SQL alongside PagerDuty incidents. Enables JOIN queries like
+  "show me all incidents where the runbook was never followed."
+
+inputs:
+  RUNBOOK_BASE_URL:
+    kind: variable
+    hint: Base URL of your runbook API or static file server
+  RUNBOOK_API_TOKEN:
+    kind: secret  
+    hint: Bearer token for runbook access (if required)
+
+base_url: "{{input.RUNBOOK_BASE_URL}}"
+auth:
+  type: HeaderAuth
+  headers:
+    - name: Authorization
+      from: template
+      template: Bearer {{input.RUNBOOK_API_TOKEN}}
+
+test_queries:
+  - SELECT name, service, severity FROM runbook_intel.runbooks LIMIT 1
+
+tables:
+  - name: runbooks
+    description: Engineering runbooks indexed by service name and alert severity
+    request:
+      method: GET
+      path: /runbooks
+    response:
+      rows_path:
+        - runbooks
+    pagination:
+      mode: page_number
+      page_size:
+        default: 50
+        max: 200
+        query_param: per_page
+      page_param: page
+    columns:
+      - name: id
+        type: Utf8
+        description: Unique runbook identifier
+      - name: name
+        type: Utf8
+        description: Runbook title
+      - name: service
+        type: Utf8
+        description: Service this runbook covers (matches PagerDuty service name)
+      - name: severity
+        type: Utf8
+        description: Alert severity this runbook handles (critical/high/medium/low)
+      - name: url
+        type: Utf8
+        description: Link to the full runbook
+      - name: last_updated
+        type: Utf8
+        description: ISO8601 timestamp of last update
+      - name: steps_count
+        type: Int64
+        description: Number of steps in the runbook
+      - name: owner_team
+        type: Utf8
+        description: Team responsible for maintaining this runbook
