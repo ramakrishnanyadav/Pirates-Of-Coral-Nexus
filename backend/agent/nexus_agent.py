@@ -88,11 +88,11 @@ class NexusAgent:
     async def _generate_sql(self, question: str, schema: str, context: dict) -> str:
         from .playbooks import PLAYBOOKS
         
-        # If it's a playbook, substitute the question with the detailed description
+        # If it's a canonical UI playbook, bypass the LLM for 100% accuracy
         if question.startswith("Run playbook: "):
             pb_id = question.replace("Run playbook: ", "").strip()
             if pb_id in PLAYBOOKS:
-                question = PLAYBOOKS[pb_id]["description"]
+                return PLAYBOOKS[pb_id]["sql"]
 
         response = await self.client.chat.completions.create(
             model="llama-3.1-8b-instant", # Switched to 8b to bypass the exhausted 100k TPD limit on 70B
@@ -159,8 +159,13 @@ RULES:
 10. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
 CROSS-SOURCE JOIN PATTERNS YOU KNOW:
-- Cross-referencing entities: When joining, match strings dynamically, e.g. `ON slack.channels.name ILIKE '%' || identifier || '%'`
-- Temporal joins: Always wrap string dates with `CAST(column AS TIMESTAMP)` before doing interval arithmetic.
+- GitHub commits JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.commits.commit__author__date AS TIMESTAMP) AND CAST(github.commits.commit__author__date AS TIMESTAMP) + INTERVAL '2 hours'
+- GitHub PRs JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour' AND CAST(github.pulls.merged_at AS TIMESTAMP) + INTERVAL '1 hour'
+- Any source JOIN Slack channels: ON slack.channels.name ILIKE '%' || identifier || '%'
+- Slack channels JOIN Slack users: ON slack.channels.purpose__value ILIKE '%' || slack.users.name || '%'
+
+CRITICAL API RESTRICTIONS:
+- sentry.events REQUIRES a hardcoded `WHERE issue_id = <constant>` filter. Do NOT query `sentry.events` unless you have an exact `issue_id`. Prefer querying `sentry.issues`.
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:

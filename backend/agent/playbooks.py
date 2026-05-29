@@ -1,18 +1,94 @@
 PLAYBOOKS = {
     "incident_autopsy": {
         "name": "Incident Autopsy",
-        "description": "Generate a comprehensive SQL query to correlate recent GitHub deployments (commits), Sentry errors, Slack alerts/channels, and Slack users to find the root cause of an incident. Return the commit sha, author (use author__login), time (use commit__author__date), error title, error count, and slack channel info (use topic__value and purpose__value)."
+        "description": "Correlate recent GitHub deployments (commits), Sentry errors, Slack alerts/channels, and Slack users.",
+        "sql": """SELECT
+    g.sha AS deploy_commit,
+    g.author__login AS deployed_by,
+    g.commit__author__date AS deploy_time,
+    s.title AS error_title,
+    s.count AS error_count,
+    s.first_seen AS error_first_seen,
+    sl.name AS slack_channel,
+    sl.topic AS slack_topic,
+    u.name AS slack_user
+FROM github.commits g
+JOIN sentry.issues s
+    ON s.first_seen BETWEEN CAST(g.commit__author__date AS TIMESTAMP) AND CAST(g.commit__author__date AS TIMESTAMP) + INTERVAL '2 hours'
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%' || g.sha || '%'
+LEFT JOIN slack.users u
+    ON sl.purpose ILIKE '%' || u.name || '%'
+WHERE g.commit__author__date >= NOW() - INTERVAL '7 days'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY s.count DESC
+LIMIT 25"""
     },
     "sprint_health": {
         "name": "Sprint Health",
-        "description": "Generate a SQL query to check GitHub PRs and related Slack discussions for active project sprints. Return the PR number, title, state, creation/merge times, and related slack channel topics (use topic__value)."
+        "description": "Check GitHub PRs and related Slack discussions for active project sprints.",
+        "sql": """SELECT
+    g.number AS pr_number,
+    g.title AS pr_title,
+    g.state AS pr_state,
+    g.created_at AS created_at,
+    g.merged_at AS merged_at,
+    sl.name AS slack_channel,
+    sl.topic AS slack_topic
+FROM github.pulls g
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%' || g.title || '%'
+WHERE g.state = 'open' OR g.merged_at >= NOW() - INTERVAL '7 days'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY g.created_at DESC
+LIMIT 25"""
     },
     "security_radar": {
         "name": "Security Radar",
-        "description": "Generate a SQL query to find potential secrets exposed in recent GitHub commits and correlate them with Sentry security issues and Slack channels. Look for 'secret', 'api_key', 'password', or 'token' in the commit__message. Use commit__author__date for time filtering."
+        "description": "Find potential secrets exposed in recent GitHub commits and correlated Sentry issues.",
+        "sql": """SELECT
+    g.sha AS commit_sha,
+    g.commit__message AS commit_message,
+    g.author__login AS author,
+    g.commit__author__date AS committed_at,
+    s.title AS related_sentry_error,
+    s.project AS project,
+    sl.name AS slack_channel
+FROM github.commits g
+LEFT JOIN sentry.issues s
+    ON s.first_seen BETWEEN CAST(g.commit__author__date AS TIMESTAMP) AND CAST(g.commit__author__date AS TIMESTAMP) + INTERVAL '2 hours'
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%secret%' OR sl.purpose ILIKE '%security%'
+WHERE (
+    g.commit__message ILIKE '%secret%'
+    OR g.commit__message ILIKE '%api_key%'
+    OR g.commit__message ILIKE '%password%'
+    OR g.commit__message ILIKE '%token%'
+  )
+  AND g.commit__author__date >= NOW() - INTERVAL '30 days'
+  AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY g.commit__author__date DESC
+LIMIT 25"""
     },
     "oncall_briefing": {
         "name": "On-Call Briefing",
-        "description": "Generate a SQL query to correlate urgent alerts from Slack channels with recent Sentry errors and GitHub commits. Return the channel name, alert topic (use topic__value), sentry error frequency, and the last deployment details (use commit__author__date)."
+        "description": "Correlate urgent alerts from Slack channels with recent Sentry errors and GitHub commits.",
+        "sql": """SELECT
+    sl.name AS slack_channel,
+    sl.topic AS alert_topic,
+    sl.created AS channel_created,
+    s.title AS sentry_error,
+    s.count AS error_frequency,
+    g.sha AS last_deploy,
+    g.commit__author__date AS deployed_at
+FROM slack.channels sl
+LEFT JOIN sentry.issues s
+    ON sl.topic ILIKE '%' || s.project || '%'
+LEFT JOIN github.commits g
+    ON g.commit__author__date >= s.first_seen - INTERVAL '4 hours'
+WHERE sl.name ILIKE '%incident%' OR sl.name ILIKE '%alert%'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY sl.created DESC
+LIMIT 20"""
     }
 }
