@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150x150/000000/00E5FF?text=N" alt="NEXUS Logo" width="100"/>
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Linux-Dark.svg" alt="NEXUS Server" width="100"/>
   <h1>NEXUS: Autonomous War Room Engine</h1>
   <p><strong>Winner-Tier Hackathon Project by Pirates of Coral</strong></p>
   <p>An AI-driven, real-time incident orchestration platform that unifies your entire engineering stack (GitHub, Sentry, Slack, Datadog) into a single, queryable intelligence layer via the Coral CLI.</p>
@@ -66,11 +66,19 @@ graph TD
 *   **Cross-Source JOINs:** The only platform capable of running `SELECT * FROM github.commits JOIN sentry.issues ON ...` in real-time.
 
 ## 🛠️ Tech Stack
-*   **Frontend:** React, Vite, Tailwind CSS v4, Framer Motion
-*   **Backend:** Python 3.11, FastAPI, Uvicorn
+<div align="center">
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/GitHub_API-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub" />
+  <img src="https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" />
+</div>
+
 *   **Intelligence:** Groq (Llama 3.3 70B), OpenAI Async Client
-*   **Execution:** Official Coral CLI Engine (Steampipe-compatible)
-*   **Infrastructure:** Docker, Docker Compose
+*   **Execution Engine:** Official Coral SQL CLI (Live API Binding)
 
 ## 🚀 Getting Started
 
@@ -104,5 +112,5 @@ All API keys are securely injected into the Docker container at runtime and are 
 
 ---
 <div align="center">
-  <p>Built with ❤️ by Pirates of Coral for the 2026 Hackathon.</p>
+  <p>Built with ❤️ by <b>Ramakrishnan</b> for <b>Pirates of Coral</b>.</p>
 </div>
