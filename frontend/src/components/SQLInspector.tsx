@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Database, Zap, FileTerminal } from 'lucide-react';
+import { Zap, FileTerminal } from 'lucide-react';
 
 export function SQLInspector({ sql, isExecuting }: { sql: string, isExecuting: boolean }) {
   const [displayedSql, setDisplayedSql] = useState('');

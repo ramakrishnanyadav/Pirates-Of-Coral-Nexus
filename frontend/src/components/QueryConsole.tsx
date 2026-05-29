@@ -23,7 +23,7 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
   const [currentSQL, setCurrentSQL] = useState("");
   const [sourcesActive, setSourcesActive] = useState<string[]>([]);
   const [metrics, setMetrics] = useState<{rows?: number, time?: number, count?: number}>({});
-  const { stream, stop } = useStreaming();
+  const { stream } = useStreaming();
   
   useEffect(() => {
     if (initialPlaybook) {

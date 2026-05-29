@@ -13,7 +13,7 @@ export function ResultsPanel({ events, isRunning }: { events: any[], isRunning: 
 
   const reasoningEvents = events.filter(e => e.type === "reasoning");
   const answerEvent = events.find(e => e.type === "answer");
-  const rawDataEvent = events.find(e => e.type === "results_received");
+
   
   // Determine severity based on content
   const fullText = answerEvent ? JSON.stringify(answerEvent.structured) : "";
