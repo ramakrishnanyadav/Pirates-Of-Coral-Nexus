@@ -51,6 +51,15 @@ CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMN
                 if schema not in ["github", "sentry", "slack"]:
                     continue
                     
+                # STRICT TABLE WHITELIST to prevent 25k+ token blowups from hundreds of API tables
+                allowed_tables = {
+                    "commits", "pulls", "issues", "releases", "workflows", "workflow_runs",
+                    "projects", "events", "alerts",
+                    "channels", "users", "messages"
+                }
+                if table not in allowed_tables:
+                    continue
+                    
                 # Filter out noisy columns to strictly manage the LLM context window
                 noisy_suffixes = ("url", "href", "cursor", "node_id", "gravatar_id", "hash", "avatar", "icon")
                 if any(column.endswith(suffix) for suffix in noisy_suffixes):
@@ -60,8 +69,8 @@ CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMN
                 if full_table not in schema_dict:
                     schema_dict[full_table] = []
                 
-                # Limit to 30 columns per table to prevent 100k token blowups
-                if len(schema_dict[full_table]) < 30:
+                # Limit to 20 columns per table to guarantee we stay under 6000 TPM
+                if len(schema_dict[full_table]) < 20:
                     schema_dict[full_table].append(column)
             
             if not schema_dict:
