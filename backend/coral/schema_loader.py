@@ -23,6 +23,19 @@ class SchemaLoader:
             desc = row.get("description", "")
             if s_name not in schemas:
                 schemas[s_name] = []
+            
+            # --- HACKATHON DEMO FIX: Avoid 10k Token Rate Limits ---
+            # The GitHub Steampipe plugin has 362 tables, which burns the 100k daily token limit in 10 queries.
+            # We filter it down to only the relevant tables for the demo.
+            allowed_tables = {
+                "github": ["pulls", "commits", "issues", "repositories"],
+                "sentry": ["issues", "projects"],
+                "slack": ["channels", "users"]
+            }
+            if s_name in allowed_tables and t_name not in allowed_tables[s_name]:
+                continue
+            # --------------------------------------------------------
+
             schemas[s_name].append(f"- {s_name}.{t_name}: {desc}")
             
         for s_name, t_list in schemas.items():

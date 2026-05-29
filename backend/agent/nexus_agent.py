@@ -70,7 +70,7 @@ class NexusAgent:
 
     async def _generate_sql(self, question: str, schema: str, context: dict) -> str:
         response = await self.client.chat.completions.create(
-            model="llama-3.3-70b-versatile", # Switched to latest supported Groq Llama 3.3 70B
+            model="llama-3.1-8b-instant", # Switched to 8b to bypass the exhausted 100k TPD limit on 70B
             messages=[
                 {"role": "system", "content": self._sql_system_prompt(schema)},
                 {"role": "user", "content": f"Question: {question}\nContext: {json.dumps(context)}"}
