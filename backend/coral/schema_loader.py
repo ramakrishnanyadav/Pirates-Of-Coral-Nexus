@@ -17,11 +17,11 @@ class SchemaLoader:
 - github.issues (Issues): id, number, state, title, body, created_at, updated_at, closed_at, owner, repo
 
 [sentry]
-- sentry.issues (Sentry Error Groups): id, project_slug, title, status, first_seen, last_seen, count, permalink
+- sentry.issues (Sentry Error Groups): id, short_id, title, status, level, count, user_count, first_seen, last_seen, project
 - sentry.projects (Sentry Projects): id, slug, name, platform, date_created
 
 [slack]
-- slack.channels (Slack Channels): id, name, is_archived, created, creator, num_members, topic, purpose
+- slack.channels (Slack Channels): id, name, is_archived, created, num_members, topic, purpose
 - slack.users (Slack Users): id, name, real_name, tz, is_admin, is_bot
 
 CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMNS LIKE 'messages' or 'message'.

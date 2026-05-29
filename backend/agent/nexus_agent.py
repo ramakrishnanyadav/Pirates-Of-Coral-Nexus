@@ -32,26 +32,38 @@ class NexusAgent:
         sql = await self._generate_sql(question, schema_context, context)
         yield {"type": "sql_generated", "sql": sql}
         
-        # Step 3: Execute against Coral
-        yield {"type": "query_executing", "source_count": self._count_sources(sql)}
-        try:
-            start_time = time.time()
-            results = self.coral.query(sql)
-            exec_time = round(time.time() - start_time, 2)
-            # Guarantee at least some minimal visual delay for cinematic effect
-            if exec_time < 0.5:
-                await __import__("asyncio").sleep(0.5 - exec_time)
-                exec_time = 0.5
-            
-            yield {
-                "type": "results_received", 
-                "row_count": len(results), 
-                "execution_time": exec_time,
-                "data": results
-            }
-        except Exception as e:
-            # Fallback for demo
-            yield {"type": "error", "message": f"Query failed: {str(e)}"}
+        # Step 3: Execute against Coral with Auto-Correction
+        max_retries = 3
+        results = None
+        error_msg = None
+        
+        for attempt in range(max_retries):
+            yield {"type": "query_executing", "source_count": self._count_sources(sql)}
+            try:
+                start_time = time.time()
+                results = self.coral.query(sql)
+                exec_time = round(time.time() - start_time, 2)
+                # Guarantee at least some minimal visual delay for cinematic effect
+                if exec_time < 0.5:
+                    await __import__("asyncio").sleep(0.5 - exec_time)
+                    exec_time = 0.5
+                
+                yield {
+                    "type": "results_received", 
+                    "row_count": len(results), 
+                    "execution_time": exec_time,
+                    "data": results
+                }
+                break
+            except Exception as e:
+                error_msg = str(e)
+                if attempt < max_retries - 1:
+                    yield {"type": "thinking", "content": f"Database error detected. Self-correcting query... (Attempt {attempt+1}/{max_retries})"}
+                    sql = await self._fix_sql(sql, error_msg, schema_context, context)
+                    yield {"type": "sql_generated", "sql": sql}
+        
+        if results is None:
+            yield {"type": "error", "message": f"Query failed after {max_retries} attempts: {error_msg}"}
             return
             
         # Step 4: Reason over results (streaming)
@@ -80,6 +92,34 @@ class NexusAgent:
         content = response.choices[0].message.content
         return self._extract_sql(content)
         
+    async def _fix_sql(self, bad_sql: str, error_msg: str, schema: str, context: dict) -> str:
+        prompt = f"""You are a Coral SQL expert fixing a failed query.
+AVAILABLE SCHEMA:
+{schema}
+
+FAILED QUERY:
+```sql
+{bad_sql}
+```
+
+ERROR RETURNED BY DATABASE:
+{error_msg}
+
+INSTRUCTIONS:
+1. Fix the SQL query to resolve the exact error reported by the database.
+2. Ensure you ONLY use the exact columns listed in the error message or schema. DO NOT invent columns.
+3. Return ONLY the fixed SQL query, no explanation, no markdown fences.
+"""
+        response = await self.client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.1
+        )
+        content = response.choices[0].message.content
+        return self._extract_sql(content)
+
     def _extract_sql(self, text: str) -> str:
         # Try to find SQL in markdown blocks
         match = re.search(r"```sql(.*?)```", text, re.DOTALL | re.IGNORECASE)
@@ -103,10 +143,7 @@ RULES:
 7. Return ONLY the SQL query, no explanation, no markdown fences
 8. CRITICAL API LIMITATION: When querying ANY `github.*` table (like github.workflows, github.issues, github.commits), you MUST include a hardcoded filter for BOTH the `owner` and `repo`. For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. For example: `WHERE github.workflows.owner = 'withcoral' AND github.workflows.repo = 'coral'`
 9. AVAILABLE SOURCES: ONLY use `github`, `sentry`, and `slack`. DO NOT use `pagerduty`, `linear`, or `datadog` in your SQL. If asked about them, use `slack` channels or messages as a proxy.
-10. SENTRY RESTRICTIONS: DO NOT use `sentry.events` (it requires a hardcoded issue_id). ONLY use `sentry.issues`.
-11. SLACK RESTRICTIONS: DO NOT use `slack.messages`. ONLY use `slack.channels` and `slack.users`. There is NO `messages` column on `slack.channels`. Use `slack.channels.topic` or `slack.channels.purpose` instead.
-12. COLUMN RESTRICTIONS: `github.commits` does not have a `branch` column.
-13. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
+10. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
 CROSS-SOURCE JOIN PATTERNS YOU KNOW:
 - GitHub commits JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.commits.author_date AS TIMESTAMP) AND CAST(github.commits.author_date AS TIMESTAMP) + INTERVAL '2 hours'
