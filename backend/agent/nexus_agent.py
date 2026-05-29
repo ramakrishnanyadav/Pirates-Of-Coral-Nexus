@@ -57,9 +57,14 @@ class NexusAgent:
                 break
             except Exception as e:
                 error_msg = str(e)
+                
+                # CRITICAL: Coral error messages can list thousands of valid columns if a schema mismatch occurs.
+                # We MUST truncate the error message to prevent blowing up the LLM context window (100k+ tokens).
+                safe_error_msg = error_msg if len(error_msg) < 1500 else error_msg[:1500] + "... [TRUNCATED FOR CONTEXT LIMIT]"
+                
                 if attempt < max_retries - 1:
                     yield {"type": "thinking", "content": f"Database error detected. Self-correcting query... (Attempt {attempt+1}/{max_retries})"}
-                    sql = await self._fix_sql(sql, error_msg, schema_context, context)
+                    sql = await self._fix_sql(sql, safe_error_msg, schema_context, context)
                     yield {"type": "sql_generated", "sql": sql}
         
         if results is None:
