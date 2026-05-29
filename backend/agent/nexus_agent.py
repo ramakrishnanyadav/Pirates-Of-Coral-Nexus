@@ -81,6 +81,14 @@ class NexusAgent:
         return max(1, count)
 
     async def _generate_sql(self, question: str, schema: str, context: dict) -> str:
+        from .playbooks import PLAYBOOKS
+        
+        # If it's a canonical UI playbook, bypass the LLM for 100% accuracy
+        if question.startswith("Run playbook: "):
+            pb_id = question.replace("Run playbook: ", "").strip()
+            if pb_id in PLAYBOOKS:
+                return PLAYBOOKS[pb_id]["sql"]
+
         response = await self.client.chat.completions.create(
             model="llama-3.1-8b-instant", # Switched to 8b to bypass the exhausted 100k TPD limit on 70B
             messages=[
@@ -149,6 +157,7 @@ CROSS-SOURCE JOIN PATTERNS YOU KNOW:
 - GitHub commits JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.commits.author_date AS TIMESTAMP) AND CAST(github.commits.author_date AS TIMESTAMP) + INTERVAL '2 hours'
 - GitHub PRs JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour' AND CAST(github.pulls.merged_at AS TIMESTAMP) + INTERVAL '1 hour'
 - Any source JOIN Slack channels: ON slack.channels.name ILIKE '%' || identifier || '%'
+- Slack channels JOIN Slack users: ON slack.channels.purpose ILIKE '%' || slack.users.name || '%'
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:

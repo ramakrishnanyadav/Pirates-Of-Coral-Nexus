@@ -1,107 +1,93 @@
 PLAYBOOKS = {
     "incident_autopsy": {
         "name": "Incident Autopsy",
-        "description": "Correlate recent deployments, errors, and Slack alerts.",
+        "description": "Correlate recent GitHub deployments (commits), Sentry errors, Slack alerts/channels, and Slack users.",
         "sql": """SELECT
-    g.sha                    AS deploy_commit,
-    g.author__login          AS deployed_by,
-    g.merged_at              AS deploy_time,
-    g.title                  AS pr_title,
-    s.title                  AS error_title,
-    s.culprit                AS error_location,
-    s.count                  AS error_count,
-    s.first_seen             AS error_first_seen,
-    sl.text                  AS slack_message,
-    sl.user__name            AS slack_author,
-    d.title                  AS datadog_monitor,
-    d.status                 AS monitor_status
+    g.sha AS deploy_commit,
+    g.author_login AS deployed_by,
+    g.author_date AS deploy_time,
+    s.title AS error_title,
+    s.count AS error_count,
+    s.first_seen AS error_first_seen,
+    sl.name AS slack_channel,
+    sl.topic AS slack_topic,
+    u.name AS slack_user
 FROM github.commits g
 JOIN sentry.issues s
-    ON s.first_seen >= g.merged_at
-    AND s.first_seen <= g.merged_at + INTERVAL '2 hours'
-LEFT JOIN slack.messages sl
-    ON sl.ts >= s.first_seen
-    AND sl.channel__name IN ('incidents', 'engineering', 'alerts')
-LEFT JOIN datadog.monitors d
-    ON d.overall_state = 'Alert'
-    AND d.modified >= g.merged_at
-WHERE g.merged_at >= NOW() - INTERVAL '7 days'
+    ON s.first_seen BETWEEN CAST(g.author_date AS TIMESTAMP) AND CAST(g.author_date AS TIMESTAMP) + INTERVAL '2 hours'
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%' || g.sha || '%'
+LEFT JOIN slack.users u
+    ON sl.purpose ILIKE '%' || u.name || '%'
+WHERE g.author_date >= NOW() - INTERVAL '7 days'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
 ORDER BY s.count DESC
 LIMIT 25"""
     },
     "sprint_health": {
         "name": "Sprint Health",
-        "description": "Check Linear tickets against GitHub PRs and Slack discussions.",
+        "description": "Check GitHub PRs and related Slack discussions for active project sprints.",
         "sql": """SELECT
-    l.identifier             AS ticket_id,
-    l.title                  AS ticket_title,
-    l.state__name            AS status,
-    l.assignee__name         AS owner,
-    l.priority               AS priority,
-    g.state                  AS pr_state,
-    g.title                  AS pr_title,
-    g.review_decision        AS pr_review,
-    sl.text                  AS last_discussion,
-    sl.ts                    AS discussed_at
-FROM linear.issues l
-LEFT JOIN github.pull_requests g
-    ON g.title ILIKE '%' || l.identifier || '%'
-LEFT JOIN slack.messages sl
-    ON sl.text ILIKE '%' || l.identifier || '%'
-    AND sl.ts >= NOW() - INTERVAL '7 days'
-WHERE l.cycle__is_active = true
-ORDER BY l.priority ASC, l.updated_at DESC"""
+    g.number AS pr_number,
+    g.title AS pr_title,
+    g.state AS pr_state,
+    g.created_at AS created_at,
+    g.merged_at AS merged_at,
+    sl.name AS slack_channel,
+    sl.topic AS slack_topic
+FROM github.pulls g
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%' || g.title || '%'
+WHERE g.state = 'open' OR g.merged_at >= NOW() - INTERVAL '7 days'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY g.created_at DESC
+LIMIT 25"""
     },
     "security_radar": {
         "name": "Security Radar",
-        "description": "Find potential secrets exposed in recent commits.",
+        "description": "Find potential secrets exposed in recent GitHub commits and correlated Sentry issues.",
         "sql": """SELECT
-    g.path                   AS file_path,
-    g.patch                  AS diff_preview,
-    g.commit__message        AS commit_message,
-    g.commit__author__login  AS author,
-    g.commit__committed_date AS committed_at,
-    s.title                  AS related_sentry_error,
-    sl.text                  AS slack_mention
-FROM github.file_changes g
+    g.sha AS commit_sha,
+    g.commit_message AS commit_message,
+    g.author_login AS author,
+    g.author_date AS committed_at,
+    s.title AS related_sentry_error,
+    sl.name AS slack_channel
+FROM github.commits g
 LEFT JOIN sentry.issues s
-    ON s.culprit ILIKE '%' || g.path || '%'
-LEFT JOIN slack.messages sl
-    ON sl.text ILIKE '%secret%'
-    OR sl.text ILIKE '%token%'
-    OR sl.text ILIKE '%password%'
+    ON s.first_seen BETWEEN CAST(g.author_date AS TIMESTAMP) AND CAST(g.author_date AS TIMESTAMP) + INTERVAL '2 hours'
+LEFT JOIN slack.channels sl
+    ON sl.topic ILIKE '%secret%' OR sl.purpose ILIKE '%security%'
 WHERE (
-    g.patch ILIKE '%secret%'
-    OR g.patch ILIKE '%api_key%'
-    OR g.patch ILIKE '%password%'
-    OR g.patch ILIKE '%token%'
+    g.commit_message ILIKE '%secret%'
+    OR g.commit_message ILIKE '%api_key%'
+    OR g.commit_message ILIKE '%password%'
+    OR g.commit_message ILIKE '%token%'
   )
-  AND g.committed_at >= NOW() - INTERVAL '30 days'
-ORDER BY g.committed_at DESC"""
+  AND g.author_date >= NOW() - INTERVAL '30 days'
+  AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY g.author_date DESC
+LIMIT 25"""
     },
     "oncall_briefing": {
         "name": "On-Call Briefing",
-        "description": "Correlate PagerDuty incidents with Sentry errors and Datadog monitors.",
+        "description": "Correlate urgent alerts from Slack channels with recent Sentry errors and GitHub commits.",
         "sql": """SELECT
-    pd.title                 AS incident_title,
-    pd.urgency               AS urgency,
-    pd.status                AS incident_status,
-    pd.created_at            AS opened_at,
-    s.title                  AS sentry_error,
-    s.count                  AS error_frequency,
-    g.sha                    AS last_deploy,
-    g.merged_at              AS deployed_at,
-    d.title                  AS triggered_monitor
-FROM pagerduty.incidents pd
+    sl.name AS slack_channel,
+    sl.topic AS alert_topic,
+    sl.created AS channel_created,
+    s.title AS sentry_error,
+    s.count AS error_frequency,
+    g.sha AS last_deploy,
+    g.author_date AS deployed_at
+FROM slack.channels sl
 LEFT JOIN sentry.issues s
-    ON s.first_seen >= pd.created_at - INTERVAL '30 minutes'
-    AND s.first_seen <= pd.created_at + INTERVAL '30 minutes'
+    ON sl.topic ILIKE '%' || s.project || '%'
 LEFT JOIN github.commits g
-    ON g.merged_at >= pd.created_at - INTERVAL '4 hours'
-LEFT JOIN datadog.monitors d
-    ON d.overall_state = 'Alert'
-WHERE pd.status IN ('triggered', 'acknowledged')
-ORDER BY pd.urgency DESC, pd.created_at DESC
+    ON g.author_date >= s.first_seen - INTERVAL '4 hours'
+WHERE sl.name ILIKE '%incident%' OR sl.name ILIKE '%alert%'
+AND g.owner = 'withcoral' AND g.repo = 'coral'
+ORDER BY sl.created DESC
 LIMIT 20"""
     }
 }
