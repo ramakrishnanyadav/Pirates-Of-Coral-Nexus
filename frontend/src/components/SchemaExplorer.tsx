@@ -4,6 +4,7 @@ export function SchemaExplorer() {
   const [schema, setSchema] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
     fetch(`${apiUrl}/api/schema`)
       .then(res => res.json())
