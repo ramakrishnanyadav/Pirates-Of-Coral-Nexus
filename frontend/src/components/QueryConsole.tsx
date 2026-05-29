@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useStreaming } from "../hooks/useStreaming";
 import { SQLInspector } from "./SQLInspector";
 import { ResultsPanel } from "./ResultsPanel";
-import { Send, Loader2 } from "lucide-react";
+import { Send } from "lucide-react";
 
 interface StreamEvent {
   type: "thinking" | "sql_generated" | "query_executing" | 
