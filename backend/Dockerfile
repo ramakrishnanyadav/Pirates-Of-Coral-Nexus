@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 RUN chmod +x scripts/init_coral.sh
-CMD ["/bin/bash", "-c", "./scripts/init_coral.sh && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["/bin/bash", "-c", "./scripts/init_coral.sh && uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
