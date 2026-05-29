@@ -104,7 +104,7 @@ RULES:
 8. CRITICAL API LIMITATION: When querying ANY `github.*` table (like github.workflows, github.issues, github.commits), you MUST include a hardcoded filter for BOTH the `owner` and `repo`. For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. For example: `WHERE github.workflows.owner = 'withcoral' AND github.workflows.repo = 'coral'`
 9. AVAILABLE SOURCES: ONLY use `github`, `sentry`, and `slack`. DO NOT use `pagerduty`, `linear`, or `datadog` in your SQL. If asked about them, use `slack` channels or messages as a proxy.
 10. SENTRY RESTRICTIONS: DO NOT use `sentry.events` (it requires a hardcoded issue_id). ONLY use `sentry.issues`.
-11. SLACK RESTRICTIONS: DO NOT use `slack.messages`. ONLY use `slack.channels` and `slack.users`.
+11. SLACK RESTRICTIONS: DO NOT use `slack.messages`. ONLY use `slack.channels` and `slack.users`. There is NO `messages` column on `slack.channels`. Use `slack.channels.topic` or `slack.channels.purpose` instead.
 12. COLUMN RESTRICTIONS: `github.commits` does not have a `branch` column.
 13. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
