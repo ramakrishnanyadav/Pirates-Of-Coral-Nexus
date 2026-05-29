@@ -96,18 +96,20 @@ AVAILABLE SCHEMA:
 RULES:
 1. Always use cross-source JOINs when the question touches multiple tools
 2. Use LEFT JOIN for optional data, INNER JOIN for required correlation
-3. Coral uses standard SQL with these source.table notation: github.issues, sentry.issues, slack.messages, etc.
+3. Coral uses standard SQL with these source.table notation: github.issues, sentry.events, slack.messages, etc.
 4. Always add LIMIT clauses (default: 25 rows)
 5. Use ILIKE for fuzzy text matching
 6. Time filtering: use NOW() - INTERVAL '7 days' syntax
 7. Return ONLY the SQL query, no explanation, no markdown fences
 8. CRITICAL API LIMITATION: When querying ANY `github.*` table (like github.workflows, github.issues, github.commits), you MUST include a hardcoded filter for BOTH the `owner` and `repo`. For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. For example: `WHERE github.workflows.owner = 'withcoral' AND github.workflows.repo = 'coral'`
+9. AVAILABLE SOURCES: ONLY use `github`, `sentry`, and `slack`. DO NOT use `pagerduty`, `linear`, or `datadog` in your SQL. If asked about them, use `slack` channels or messages as a proxy.
+10. COLUMN RESTRICTIONS: `github.commits` does not have a `branch` column. Do not filter by branch on commits.
+11. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
 CROSS-SOURCE JOIN PATTERNS YOU KNOW:
-- GitHub commits JOIN Sentry errors: ON sentry.first_seen BETWEEN github.merged_at AND github.merged_at + INTERVAL '2 hours'
-- Linear issues JOIN GitHub PRs: ON github.title ILIKE '%' || linear.identifier || '%'  
-- PagerDuty incidents JOIN Datadog monitors: ON datadog.modified >= pagerduty.created_at - INTERVAL '30 min'
-- Any source JOIN Slack messages: ON slack.text ILIKE '%' || identifier || '%'
+- GitHub commits JOIN Sentry errors: ON sentry.events.timestamp BETWEEN CAST(github.commits.author_date AS TIMESTAMP) AND CAST(github.commits.author_date AS TIMESTAMP) + INTERVAL '2 hours'
+- GitHub PRs JOIN Sentry events: ON sentry.events.timestamp BETWEEN CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour' AND CAST(github.pulls.merged_at AS TIMESTAMP) + INTERVAL '1 hour'
+- Any source JOIN Slack messages: ON slack.messages.text ILIKE '%' || identifier || '%'
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:
