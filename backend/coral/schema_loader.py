@@ -54,7 +54,7 @@ CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMN
                 # STRICT TABLE WHITELIST to prevent 25k+ token blowups from hundreds of API tables
                 allowed_tables = {
                     "commits", "pulls", "issues", "releases", "workflows", "workflow_runs",
-                    "projects", "events", "alerts",
+                    "projects", 
                     "channels", "users", "messages"
                 }
                 if table not in allowed_tables:
