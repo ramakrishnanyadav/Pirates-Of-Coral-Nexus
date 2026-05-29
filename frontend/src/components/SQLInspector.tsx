@@ -32,15 +32,15 @@ export function SQLInspector({ sql, isExecuting }: { sql: string, isExecuting: b
   }, [sql, isExecuting]);
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] border border-border rounded-xl overflow-hidden shadow-2xl relative group">
+    <div className="flex flex-col h-full bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden shadow-2xl relative group cyber-border">
       {/* Scanline effect */}
       {isExecuting && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl z-10">
-          <div className="w-full h-8 bg-cyan-500/10 blur-sm animate-[scan_2s_ease-in-out_infinite]" />
+          <div className="w-full h-16 bg-cyan-500/10 blur-md animate-[scan_2s_ease-in-out_infinite]" />
         </div>
       )}
-      <div className="px-4 py-3 border-b border-[#333] bg-[#252526] flex items-center justify-between z-20 relative">
-        <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+      <div className="px-5 py-3 border-b border-white/5 bg-[#050508]/60 backdrop-blur flex items-center justify-between z-20 relative">
+        <div className="flex items-center gap-3 text-[10px] font-mono text-gray-400 tracking-[0.2em] uppercase">
           <FileTerminal size={14} className="text-cyan-500" />
           <span className="tracking-widest uppercase">Coral Execution Engine</span>
         </div>
@@ -51,10 +51,9 @@ export function SQLInspector({ sql, isExecuting }: { sql: string, isExecuting: b
           </div>
         )}
       </div>
-      
-      <div className="p-5 flex-1 overflow-auto bg-[#1e1e1e] relative z-0">
-        <pre className="text-[13px] leading-relaxed font-mono text-[#d4d4d4]">
-          <code dangerouslySetInnerHTML={{ __html: highlightSQL(displayedSql) + (isExecuting && displayedSql.length < sql.length ? '<span class="animate-pulse bg-cyan-500 w-2 h-4 inline-block ml-1 align-middle"></span>' : '') }} />
+      <div className="p-6 flex-1 overflow-auto bg-transparent relative z-0 no-scrollbar">
+        <pre className="text-[13px] leading-relaxed font-mono text-gray-300">
+          <code dangerouslySetInnerHTML={{ __html: highlightSQL(displayedSql) + (isExecuting && displayedSql.length < sql.length ? '<span class="animate-pulse bg-cyan-400 w-2 h-4 inline-block ml-1 align-middle shadow-[0_0_8px_rgba(34,211,238,0.8)]"></span>' : '') }} />
         </pre>
       </div>
       

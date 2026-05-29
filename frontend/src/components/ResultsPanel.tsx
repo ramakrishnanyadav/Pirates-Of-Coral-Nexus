@@ -132,48 +132,15 @@ function Section({ title, content, icon }: { title: string, content: string, ico
 function EvidenceCards({ content }: { content: string }) {
   if (!content) return null;
   
-  // Simple heuristic to extract evidence into tangible cards
-  const extractCards = () => {
-    const cards = [];
-    if (content.toLowerCase().includes("a1b2c3") || content.includes("commit")) {
-      cards.push({ type: "github", title: "Commit a1b2c3d4", desc: "Refactor payment processor" });
-    }
-    if (content.toLowerCase().includes("sen-") || content.includes("typeerror")) {
-      cards.push({ type: "sentry", title: "SEN-9021", desc: "TypeError in payments/processor.ts" });
-    }
-    if (content.toLowerCase().includes("slack") || content.includes("discussion")) {
-      cards.push({ type: "slack", title: "#incidents", desc: "Multiple 500s reported by @alice" });
-    }
-    if (content.toLowerCase().includes("pd-") || content.includes("pagerduty") || content.includes("incident")) {
-      cards.push({ type: "pagerduty", title: "PD-2891", desc: "High Urgency: Checkout API Spiking" });
-    }
-    return cards;
-  };
-  
-  const cards = extractCards();
-  
   return (
     <div className="glass-card rounded-xl p-5 shadow-lg relative overflow-hidden group">
       <div className="absolute top-0 left-0 w-1 h-full bg-blue-600/50 group-hover:bg-blue-500 transition-colors"></div>
       <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
         <span>📊</span> Tangible Evidence
       </h4>
-      
-      {cards.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3">
-          {cards.map((card, i) => (
-            <div key={i} className="bg-white/5 border border-white/10 rounded p-3 hover:bg-white/10 transition-colors backdrop-blur-sm">
-              <div className="text-[10px] font-mono text-gray-400 uppercase mb-1">{card.type}</div>
-              <div className="text-sm font-semibold text-cyan-400">{card.title}</div>
-              <div className="text-xs text-gray-300 mt-1 line-clamp-2">{card.desc}</div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-medium">
-          {content}
-        </div>
-      )}
+      <div className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap font-medium">
+        {content}
+      </div>
     </div>
   );
 }

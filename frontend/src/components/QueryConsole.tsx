@@ -61,9 +61,9 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
   return (
     <div className="flex flex-col h-full gap-6 max-h-full">
       {/* Input Area */}
-      <div className="relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-        <div className="relative flex gap-2 p-2 bg-[#0a0a0c]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl focus-within:border-cyan-500/50 focus-within:ring-1 focus-within:ring-cyan-500/50 transition-all">
+      <div className="relative group cyber-border rounded-2xl">
+        <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-2xl blur-lg opacity-50 group-hover:opacity-100 transition duration-500" />
+        <div className="relative flex gap-2 p-2 bg-[#0c0c0f]/80 backdrop-blur-2xl border border-white/5 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.8)] focus-within:bg-[#0c0c0f]/95 transition-all">
           <input
             className="flex-1 bg-transparent px-5 py-4 text-white placeholder-gray-500 text-lg focus:outline-none tracking-wide"
             placeholder="Ask anything about your engineering stack... e.g. 'Why did prod break at 2am?'"
@@ -75,12 +75,12 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
           <button
             onClick={handleQuery}
             disabled={isRunning || !question.trim()}
-            className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 disabled:from-gray-800 disabled:to-gray-800 disabled:text-gray-500
-                       text-white rounded-xl font-bold tracking-wide text-sm transition-all shadow-[0_0_20px_rgba(8,145,178,0.3)] disabled:shadow-none flex items-center gap-3 relative overflow-hidden group/btn"
+            className="px-8 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-gray-800 disabled:to-gray-800 disabled:text-gray-500
+                       text-white rounded-xl font-bold tracking-widest uppercase text-[11px] transition-all shadow-[0_0_20px_rgba(8,145,178,0.3)] disabled:shadow-none flex items-center gap-3 relative overflow-hidden group/btn"
           >
-            {isRunning && <div className="absolute inset-0 w-full h-full bg-white/20 animate-[slide_1s_ease-in-out_infinite]" />}
-            {isRunning ? <Loader2 className="animate-spin relative z-10" size={18} /> : <Send size={18} className="relative z-10 group-hover/btn:translate-x-1 transition-transform" />}
-            <span className="relative z-10">{isRunning ? "Investigating..." : "Investigate"}</span>
+            {isRunning && <div className="absolute inset-0 w-full h-full bg-white/10 animate-[slide-up-fade_1s_ease-in-out_infinite]" />}
+            {isRunning ? <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin relative z-10" /> : <Send size={16} className="relative z-10 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />}
+            <span className="relative z-10">{isRunning ? "PROCESSING" : "EXECUTE"}</span>
           </button>
         </div>
       </div>
@@ -103,7 +103,7 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
         )}
       </div>
       
-      <div className="flex-1 overflow-hidden grid grid-cols-2 gap-6 mt-2 min-h-0">
+      <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-6 mt-2 min-h-0">
         {/* Left Side - Code & Process */}
         <div className="flex flex-col gap-4 overflow-hidden rounded-xl min-w-0">
             {currentSQL && (

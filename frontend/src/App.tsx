@@ -7,14 +7,14 @@ function App() {
   const [activePlaybook, setActivePlaybook] = useState<string | null>(null)
 
   return (
-    <div className="flex h-screen w-full overflow-hidden selection:bg-cyan-500/30 font-sans">
+    <div className="flex h-screen w-full overflow-hidden selection:bg-cyan-500/30">
       
       {/* Ambient background glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-600/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-900/20 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-purple-900/20 blur-[150px] pointer-events-none" />
 
-      {/* Left Sidebar */}
-      <div className="w-72 flex flex-col glass-panel border-r-0 border-r-white/5 z-10 relative shadow-2xl">
+      {/* Left Sidebar - Hidden on mobile, visible on medium screens+ */}
+      <div className="hidden md:flex flex-col w-72 glass-panel border-r-0 border-r-white/5 z-10 relative shadow-2xl shrink-0">
         <div className="p-6 border-b border-white/5 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(8,145,178,0.4)]">
             <Activity size={22} className="animate-pulse-slow" />
@@ -46,12 +46,12 @@ function App() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col relative h-full z-0">
+      <div className="flex-1 flex flex-col relative h-full min-w-0 z-0">
         {/* Header pattern */}
-        <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+        <div className="absolute top-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-30 shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
         
-        <div className="flex-1 overflow-hidden p-8">
-          <div className="max-w-[1400px] mx-auto h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-8 no-scrollbar scroll-smooth">
+          <div className="max-w-[1600px] mx-auto h-full flex flex-col">
             <QueryConsole initialPlaybook={activePlaybook} />
           </div>
         </div>
