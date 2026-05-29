@@ -69,22 +69,6 @@ class NexusAgent:
         return max(1, count)
 
     async def _generate_sql(self, question: str, schema: str, context: dict) -> str:
-        # --- HACKATHON DEMO GUARANTEE ---
-        # Intercept specific known test queries that hit Steampipe API limitations
-        q_lower = question.lower()
-        if "payment api spiked with 500 errors in sentry" in q_lower:
-            return """SELECT github.pulls.number, github.pulls.title, github.pulls.merged_at 
-FROM github.pulls 
-WHERE github.pulls.owner = 'withcoral' AND github.pulls.repo = 'coral' AND github.pulls.state = 'closed'
-LIMIT 5"""
-        
-        if "pagerduty" in q_lower and "slack messages" in q_lower:
-            return """SELECT slack.channels.name, slack.users.name as creator_name 
-FROM slack.channels 
-INNER JOIN slack.users ON slack.channels.creator = slack.users.id 
-LIMIT 5"""
-        # --------------------------------
-
         response = await self.client.chat.completions.create(
             model="llama-3.3-70b-versatile", # Switched to latest supported Groq Llama 3.3 70B
             messages=[
@@ -119,13 +103,15 @@ RULES:
 7. Return ONLY the SQL query, no explanation, no markdown fences
 8. CRITICAL API LIMITATION: When querying ANY `github.*` table (like github.workflows, github.issues, github.commits), you MUST include a hardcoded filter for BOTH the `owner` and `repo`. For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. For example: `WHERE github.workflows.owner = 'withcoral' AND github.workflows.repo = 'coral'`
 9. AVAILABLE SOURCES: ONLY use `github`, `sentry`, and `slack`. DO NOT use `pagerduty`, `linear`, or `datadog` in your SQL. If asked about them, use `slack` channels or messages as a proxy.
-10. COLUMN RESTRICTIONS: `github.commits` does not have a `branch` column. Do not filter by branch on commits.
-11. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
+10. SENTRY RESTRICTIONS: DO NOT use `sentry.events` (it requires a hardcoded issue_id). ONLY use `sentry.issues`.
+11. SLACK RESTRICTIONS: DO NOT use `slack.messages`. ONLY use `slack.channels` and `slack.users`.
+12. COLUMN RESTRICTIONS: `github.commits` does not have a `branch` column.
+13. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
 CROSS-SOURCE JOIN PATTERNS YOU KNOW:
-- GitHub commits JOIN Sentry errors: ON sentry.events.timestamp BETWEEN CAST(github.commits.author_date AS TIMESTAMP) AND CAST(github.commits.author_date AS TIMESTAMP) + INTERVAL '2 hours'
-- GitHub PRs JOIN Sentry events: ON sentry.events.timestamp BETWEEN CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour' AND CAST(github.pulls.merged_at AS TIMESTAMP) + INTERVAL '1 hour'
-- Any source JOIN Slack messages: ON slack.messages.text ILIKE '%' || identifier || '%'
+- GitHub commits JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.commits.author_date AS TIMESTAMP) AND CAST(github.commits.author_date AS TIMESTAMP) + INTERVAL '2 hours'
+- GitHub PRs JOIN Sentry issues: ON sentry.issues.first_seen BETWEEN CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour' AND CAST(github.pulls.merged_at AS TIMESTAMP) + INTERVAL '1 hour'
+- Any source JOIN Slack channels: ON slack.channels.name ILIKE '%' || identifier || '%'
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:
