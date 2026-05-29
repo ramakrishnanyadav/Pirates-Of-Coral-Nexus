@@ -47,14 +47,22 @@ CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMN
                 table = col.get("table_name", "")
                 column = col.get("column_name", "")
                 
-                # Ignore internal schemas
-                if schema in ["information_schema", "coral"]:
+                # Ignore internal or irrelevant schemas to save tokens
+                if schema not in ["github", "sentry", "slack"]:
+                    continue
+                    
+                # Filter out noisy columns to strictly manage the LLM context window
+                noisy_suffixes = ("url", "href", "cursor", "node_id", "gravatar_id", "hash", "avatar", "icon")
+                if any(column.endswith(suffix) for suffix in noisy_suffixes):
                     continue
                     
                 full_table = f"{schema}.{table}"
                 if full_table not in schema_dict:
                     schema_dict[full_table] = []
-                schema_dict[full_table].append(column)
+                
+                # Limit to 30 columns per table to prevent 100k token blowups
+                if len(schema_dict[full_table]) < 30:
+                    schema_dict[full_table].append(column)
             
             if not schema_dict:
                 # Fallback if information_schema is not accessible
