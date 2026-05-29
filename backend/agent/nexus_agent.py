@@ -115,21 +115,34 @@ FAILED QUERY:
 {bad_sql}
 ```
 
-ERROR RETURNED BY DATABASE:
+ERROR RETURNED BY DATAFUSION (CORAL):
 {error_msg}
+
+{self._sql_system_prompt(schema).split('AVAILABLE SOURCES')[1] if 'AVAILABLE SOURCES' in self._sql_system_prompt(schema) else ''}
 
 INSTRUCTIONS:
 1. Fix the SQL query to resolve the exact error reported by the database.
 2. Ensure you ONLY use the exact columns listed in the error message or schema. DO NOT invent columns.
-3. Return ONLY the fixed SQL query, no explanation, no markdown fences.
+3. If the error mentions 'InSubquery' or 'Physical plan', rewrite the query to use an explicit JOIN instead of a subquery.
+4. If the error mentions 'coercion' or 'Interval', wrap the date column in CAST(column AS TIMESTAMP).
+5. Return ONLY the fixed SQL query, no explanation.
 """
-        response = await self.client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.1
-        )
+        try:
+            # Use the much smarter 70B model for self-healing since the token payload here is very small (<1500 tokens).
+            # This ensures it can understand obscure database engine errors.
+            response = await self.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1
+            )
+        except Exception as e:
+            # Fallback to 8b if 70b hits a rate limit
+            response = await self.client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1
+            )
+            
         content = response.choices[0].message.content
         return self._extract_sql(content)
 
