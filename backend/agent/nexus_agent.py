@@ -124,7 +124,7 @@ INSTRUCTIONS:
 1. Fix the SQL query to resolve the exact error reported by the database.
 2. Ensure you ONLY use the exact columns listed in the error message or schema. DO NOT invent columns.
 3. If the error mentions 'InSubquery' or 'Physical plan', rewrite the query to use an explicit JOIN instead of a subquery.
-4. If the error mentions '<constant>' or 'constant equality filter', you MUST replace any subqueries or variables in the WHERE clause with a hardcoded literal string (e.g. `repo = 'coral'`).
+4. If the error mentions '<constant>' or 'constant equality filter' for a column like `owner` or `repo`, it means you FORGOT to add `table_name.owner = 'withcoral' AND table_name.repo = 'coral'` to the WHERE clause for ONE OR MORE of the tables in your query. You MUST add these filters for EVERY single github table present in the FROM or JOIN clauses.
 5. If the error mentions 'coercion' or 'Interval', wrap the date column in CAST(column AS TIMESTAMP).
 6. Return ONLY the fixed SQL query, no explanation.
 """
@@ -168,7 +168,7 @@ RULES:
 5. Use ILIKE for fuzzy text matching
 6. Time filtering: use NOW() - INTERVAL '7 days' syntax
 7. Return ONLY the SQL query, no explanation, no markdown fences
-8. CRITICAL API LIMITATION: When querying ANY `github.*` table (like github.workflows, github.issues, github.commits), you MUST include a hardcoded filter for BOTH the `owner` and `repo`. For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. For example: `WHERE github.workflows.owner = 'withcoral' AND github.workflows.repo = 'coral'`
+8. CRITICAL API LIMITATION: When querying ANY `github.*` table, you MUST include a hardcoded filter for BOTH the `owner` and `repo` for EVERY SINGLE GITHUB TABLE in your query! For this demo, always use `owner = 'withcoral'` AND `repo = 'coral'`. If you JOIN 3 github tables, you MUST have 6 constant filters in your WHERE clause (e.g. `WHERE github.commits.owner = 'withcoral' AND github.commits.repo = 'coral' AND github.pulls.owner = 'withcoral' AND github.pulls.repo = 'coral'`).
 9. AVAILABLE SOURCES: ONLY use `github`, `sentry`, and `slack`. DO NOT use `pagerduty`, `linear`, or `datadog` in your SQL. If asked about them, use `slack` channels or messages as a proxy.
 10. DATE ARITHMETIC: In Coral (DataFusion), you CANNOT subtract intervals directly from strings. You MUST cast them to timestamps first. Example: `CAST(github.pulls.merged_at AS TIMESTAMP) - INTERVAL '1 hour'`.
 
@@ -180,7 +180,7 @@ CROSS-SOURCE JOIN PATTERNS YOU KNOW:
 
 CRITICAL API RESTRICTIONS:
 - sentry.events REQUIRES a hardcoded `WHERE issue_id = <constant>` filter. Do NOT query `sentry.events` unless you have an exact `issue_id`. Prefer querying `sentry.issues`.
-- All github tables (github.pulls, github.commits, github.issues) REQUIRE a hardcoded `WHERE owner = <constant> AND repo = <constant>` filter (e.g., `owner = 'withcoral' AND repo = 'coral'`). You MUST include this in every query hitting GitHub.
+- All github tables (github.pulls, github.commits, github.issues) REQUIRE a hardcoded `WHERE owner = <constant> AND repo = <constant>` filter applied to EVERY SINGLE TABLE ALIAS in the query.
 
 STRICT SQL DIALECT RULES (DATAFUSION):
 - NO SUBQUERIES ALLOWED: You CANNOT use `IN (SELECT ...)` or `= (SELECT ...)`. 
