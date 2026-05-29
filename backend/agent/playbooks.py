@@ -19,7 +19,7 @@ LEFT JOIN slack.channels sl
     ON sl.topic ILIKE '%' || g.sha || '%'
 LEFT JOIN slack.users u
     ON sl.purpose ILIKE '%' || u.name || '%'
-WHERE g.commit__author__date >= NOW() - INTERVAL '7 days'
+WHERE CAST(g.commit__author__date AS TIMESTAMP) >= NOW() - INTERVAL '7 days'
 AND g.owner = 'withcoral' AND g.repo = 'coral'
 ORDER BY s.count DESC
 LIMIT 25"""
@@ -38,9 +38,9 @@ LIMIT 25"""
 FROM github.pulls g
 LEFT JOIN slack.channels sl
     ON sl.topic ILIKE '%' || g.title || '%'
-WHERE g.state = 'open' OR g.merged_at >= NOW() - INTERVAL '7 days'
+WHERE (g.state = 'open' OR CAST(g.merged_at AS TIMESTAMP) >= NOW() - INTERVAL '7 days')
 AND g.owner = 'withcoral' AND g.repo = 'coral'
-ORDER BY g.created_at DESC
+ORDER BY CAST(g.created_at AS TIMESTAMP) DESC
 LIMIT 25"""
     },
     "security_radar": {
@@ -65,9 +65,9 @@ WHERE (
     OR g.commit__message ILIKE '%password%'
     OR g.commit__message ILIKE '%token%'
   )
-  AND g.commit__author__date >= NOW() - INTERVAL '30 days'
+  AND CAST(g.commit__author__date AS TIMESTAMP) >= NOW() - INTERVAL '30 days'
   AND g.owner = 'withcoral' AND g.repo = 'coral'
-ORDER BY g.commit__author__date DESC
+ORDER BY CAST(g.commit__author__date AS TIMESTAMP) DESC
 LIMIT 25"""
     },
     "oncall_briefing": {
@@ -85,7 +85,7 @@ FROM slack.channels sl
 LEFT JOIN sentry.issues s
     ON sl.topic ILIKE '%' || s.project || '%'
 LEFT JOIN github.commits g
-    ON g.commit__author__date >= s.first_seen - INTERVAL '4 hours'
+    ON CAST(g.commit__author__date AS TIMESTAMP) >= CAST(s.first_seen AS TIMESTAMP) - INTERVAL '4 hours'
 WHERE sl.name ILIKE '%incident%' OR sl.name ILIKE '%alert%'
 AND g.owner = 'withcoral' AND g.repo = 'coral'
 ORDER BY sl.created DESC
