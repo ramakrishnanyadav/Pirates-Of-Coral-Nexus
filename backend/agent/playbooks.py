@@ -52,6 +52,7 @@ LIMIT 25"""
     g.author_login AS author,
     g.author_date AS committed_at,
     s.title AS related_sentry_error,
+    s.project AS project,
     sl.name AS slack_channel
 FROM github.commits g
 LEFT JOIN sentry.issues s
