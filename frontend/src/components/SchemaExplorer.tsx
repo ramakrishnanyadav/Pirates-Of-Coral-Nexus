@@ -29,7 +29,7 @@ export function SchemaExplorer() {
     <div>
       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Live Catalog</h3>
       <div className="space-y-4">
-        {Object.entries(grouped).map(([schemaName, tables]: [string, any[]]) => (
+        {(Object.entries(grouped) as any[]).map(([schemaName, tables]: any) => (
           <div key={schemaName}>
             <div className="text-xs font-mono text-cyan-500 mb-1 flex items-center gap-1">
               {schemaName} <span className="text-gray-600">({tables.length})</span>
