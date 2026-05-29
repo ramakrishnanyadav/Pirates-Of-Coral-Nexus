@@ -22,6 +22,8 @@ fi
 # Add Sentry Source
 if [ -n "$SENTRY_AUTH_TOKEN" ]; then
     echo "Configuring Sentry API source..."
+    export SENTRY_TOKEN=$SENTRY_AUTH_TOKEN
+    export SENTRY_ORG=${SENTRY_ORG:-"default"}
     coral source add sentry || true
 else
     echo "WARNING: SENTRY_AUTH_TOKEN not found."
@@ -30,6 +32,7 @@ fi
 # Add Slack Source
 if [ -n "$SLACK_USER_TOKEN" ]; then
     echo "Configuring Slack API source..."
+    export SLACK_TOKEN=$SLACK_USER_TOKEN
     coral source add slack || true
 else
     echo "WARNING: SLACK_USER_TOKEN not found."
