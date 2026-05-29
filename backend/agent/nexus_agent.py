@@ -166,6 +166,7 @@ CROSS-SOURCE JOIN PATTERNS YOU KNOW:
 
 CRITICAL API RESTRICTIONS:
 - sentry.events REQUIRES a hardcoded `WHERE issue_id = <constant>` filter. Do NOT query `sentry.events` unless you have an exact `issue_id`. Prefer querying `sentry.issues`.
+- All github tables (github.pulls, github.commits, github.issues) REQUIRE a hardcoded `WHERE owner = <constant> AND repo = <constant>` filter (e.g., `owner = 'withcoral' AND repo = 'coral'`). You MUST include this in every query hitting GitHub.
 """
 
     async def _reason_over_results(self, question: str, sql: str, results: list) -> AsyncIterator[dict]:
