@@ -38,8 +38,9 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
     setSourcesActive([]);
     setIsRunning(true);
     
-    // Default URL points to FastAPI dev server if running via vite proxy or absolute
-    await stream("http://localhost:8000/api/query", { question }, (event: StreamEvent) => {
+    // Use environment variable for API URL or fallback to localhost
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    await stream(`${apiUrl}/api/query`, { question }, (event: StreamEvent) => {
       setEvents(prev => [...prev, event]);
       
       if (event.type === "sql_generated") {
