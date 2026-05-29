@@ -69,8 +69,15 @@ CRITICAL: YOU MUST ONLY USE THE EXACT COLUMNS LISTED ABOVE. DO NOT INVENT COLUMN
                 if full_table not in schema_dict:
                     schema_dict[full_table] = []
                 
-                # Limit to 20 columns per table to guarantee we stay under 6000 TPM
-                if len(schema_dict[full_table]) < 20:
+                # Prioritize critical playbook columns so they never get truncated
+                critical_cols = {
+                    "author__login", "commit__author__date", "commit__message", "sha",
+                    "merged_at", "created_at", "state", "title", "number",
+                    "topic__value", "purpose__value", "name", "id", "first_seen", "count", "project"
+                }
+                
+                # Limit to 80 columns per table to stay under 6000 TPM while providing enough schema context
+                if column in critical_cols or len(schema_dict[full_table]) < 80:
                     schema_dict[full_table].append(column)
             
             if not schema_dict:
