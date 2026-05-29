@@ -9,10 +9,10 @@
 ## 🚀 The Problem: The Context Switching Crisis
 When critical infrastructure goes down, engineers waste precious minutes jumping between PagerDuty, Datadog, Sentry, Slack, and GitHub. Triaging an incident requires correlating fragmented data across siloed platforms, leading to extreme burnout and massive financial losses.
 
-## ⚡ The Solution: Unified AI Orchestration
-**NEXUS** completely eliminates context switching. Instead of humans manually querying 5 different tools, NEXUS uses an **Autonomous AI Agent** backed by the **Coral SQL Engine** to unify the entire stack.
+## ⚡ The Solution: Data-Driven Orchestration
+**NEXUS** reduces context switching. Instead of humans manually querying 5 different tools, NEXUS uses an **LLM-powered reasoning engine** backed by the **Coral SQL Engine** to unify the stack.
 
-NEXUS takes natural language (e.g., *"Why did the payment API fail?"*), writes real-time cross-platform SQL `JOIN` statements, executes them against live production APIs, and generates a structured autopsy—all in under 5 seconds.
+NEXUS takes natural language (e.g., *"Why did the payment API fail?"*), writes cross-platform SQL `JOIN` statements, executes them against the environment, and generates a structured autopsy.
 
 ## 🏗️ System Architecture
 
@@ -59,12 +59,12 @@ graph TD
 ```
 
 ## ✨ Key Features
-*   **Live API Execution (Zero Mock Data):** Natively integrates the official `coral` CLI inside the Docker infrastructure to securely execute paginated, rate-limited HTTP requests to live platforms.
-*   **Agentic SQL Generation:** Powered by **Groq Llama 3.3** for ultra-low latency. The agent dynamically learns API constraints (like GitHub `owner` and `repo` requirements) and adapts its queries autonomously.
-*   **Premium Glassmorphism UI:** Built with Vite and Tailwind CSS v4, featuring dynamic neon glow states, backdrop blurs, and cinematic streaming responses.
+*   **Real-World Execution Environment:** Natively integrates the official `coral` CLI inside the Docker infrastructure to create a deterministic enterprise environment powered by real Coral execution.
+*   **Dynamic SQL Generation:** Powered by **Groq Llama 3.3** for ultra-low latency. The system dynamically learns API constraints (like GitHub `owner` and `repo` requirements) and adapts its queries.
+*   **Polished UI:** Built with Vite and Tailwind CSS v4, featuring a dark-mode war room aesthetic and real-time streaming updates.
 *   **Cross-Source JOINs:** The only platform capable of running `SELECT * FROM github.commits JOIN sentry.issues ON ...` in real-time.
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture Roles
 <div align="center">
   <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
@@ -76,8 +76,9 @@ graph TD
   <img src="https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" />
 </div>
 
-*   **Intelligence:** Groq (Llama 3.3 70B), OpenAI Async Client
-*   **Execution Engine:** Official Coral SQL CLI (Live API Binding)
+*   **Visualization & UI:** React + Tailwind CSS v4
+*   **Reasoning & Intelligence:** Groq (Llama 3.3 70B) via the OpenAI Async Client
+*   **Data Execution & Joins:** Official Coral SQL CLI (Live API Binding)
 
 ## 🚀 Getting Started
 
