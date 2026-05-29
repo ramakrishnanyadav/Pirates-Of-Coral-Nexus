@@ -103,16 +103,16 @@ export function QueryConsole({ initialPlaybook }: { initialPlaybook?: string | n
         )}
       </div>
       
-      <div className="flex-1 overflow-hidden flex gap-6 mt-2 min-h-0">
+      <div className="flex-1 overflow-hidden grid grid-cols-2 gap-6 mt-2 min-h-0">
         {/* Left Side - Code & Process */}
-        <div className="w-1/2 flex flex-col gap-4 overflow-hidden rounded-xl min-w-0">
+        <div className="flex flex-col gap-4 overflow-hidden rounded-xl min-w-0">
             {currentSQL && (
             <SQLInspector sql={currentSQL} isExecuting={isRunning} />
             )}
         </div>
         
         {/* Right Side - Intelligence Results */}
-        <div className="w-1/2 flex flex-col overflow-hidden glass-panel rounded-xl min-w-0">
+        <div className="flex flex-col overflow-hidden glass-panel rounded-xl min-w-0">
             <ResultsPanel events={events} isRunning={isRunning} />
         </div>
       </div>
