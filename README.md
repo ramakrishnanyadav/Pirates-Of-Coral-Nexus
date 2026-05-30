@@ -26,11 +26,13 @@ graph TD
 
     %% Nodes
     User(("👨‍💻 User Request")):::user
-    UI["💻 NEXUS Glassmorphism UI\n(React + Vite + Tailwind v4)"]:::user
+    UI["💻 NEXUS Adaptive Terminal\n(React + Vite + Tailwind v4)"]:::user
     
     subgraph Intelligence Layer
-        Agent["🤖 NEXUS Agent\n(Groq Llama 3.3)"]:::ai
-        Schema["📚 Schema Loader"]:::ai
+        Playbook["⚡ Deterministic Interceptor\n(Sub-second Bypass)"]:::ai
+        Agent["🤖 NEXUS Agent\n(Groq Llama 3.1 8B)"]:::ai
+        Healer["🩹 Self-Healing Compiler\n(Groq Llama 3.3 70B)"]:::ai
+        Schema["📚 Schema Loader\n(Live information_schema)"]:::ai
     end
 
     subgraph Execution Layer
@@ -44,10 +46,14 @@ graph TD
     end
 
     %% Connections
-    User -->|'Run Incident Autopsy'| UI
+    User -->|'Run Playbook'| Playbook
+    User -->|'Custom Question'| UI
+    Playbook -->|Deterministic SQL| CoralCLI
     UI -->|Natural Language| Agent
-    Agent <-->|Fetch Source Context| Schema
+    Agent <-->|Fetch Live Catalog| Schema
     Agent -->|Generates SQL| CoralCLI
+    CoralCLI -->|Compilation Error| Healer
+    Healer -->|Self-Corrected SQL| CoralCLI
     CoralCLI -->|Authentication & Routing| GitHub
     CoralCLI -->|Authentication & Routing| Sentry
     CoralCLI -->|Authentication & Routing| Slack
@@ -55,14 +61,15 @@ graph TD
     Sentry -->|Live JSON| CoralCLI
     Slack -->|Live JSON| CoralCLI
     CoralCLI -->|Correlated Results| Agent
-    Agent -->|Reasoning & Briefing| UI
+    Agent -->|SSE Stream| UI
 ```
 
 ## ✨ Key Features
-*   **Real-World Execution Environment:** Natively integrates the official `coral` CLI inside the Docker infrastructure to create a deterministic enterprise environment powered by real Coral execution.
-*   **Dynamic SQL Generation:** Powered by **Groq Llama 3.3** for ultra-low latency. The system dynamically learns API constraints (like GitHub `owner` and `repo` requirements) and adapts its queries.
-*   **Polished UI:** Built with Vite and Tailwind CSS v4, featuring a dark-mode war room aesthetic and real-time streaming updates.
-*   **Cross-Source JOINs:** The only platform capable of running `SELECT * FROM github.commits JOIN sentry.issues ON ...` in real-time.
+*   **Hybrid AI Compilation Pipeline:** Combines the ultra-low latency of **Llama 3.1 8B** for rapid initial SQL drafting with the reasoning depth of **Llama 3.3 70B** to self-heal complex DataFusion query planner syntax errors on the fly.
+*   **Deterministic Playbook Interceptor:** Zero-latency bypass path that serves pre-optimized canonical "War Room" SQL directly to the execution layer, guaranteeing 100% accuracy for standard incidents.
+*   **Dynamic Live Schema Discovery:** Bypasses traditional static metadata stores by dynamically scanning Coral's active tables via `information_schema` with whitelist column trimming to enforce strict token efficiency.
+*   **Adaptive Streaming Dashboard:** React client backed by Server-Sent Events (SSE) streaming from FastAPI, featuring threshold-aware auto-scrolling (no scroll hijacking) and a responsive CSS grid that splits from a single focused panel to a dual terminal layout.
+*   **Cross-Source JOINs:** Harnesses Coral's advanced processing engine to run distributed `LEFT JOIN` queries linking GitHub, Sentry, and Slack datasets seamlessly.
 
 ## 🛠️ Tech Stack & Architecture Roles
 <div align="center">
@@ -76,8 +83,8 @@ graph TD
   <img src="https://img.shields.io/badge/Sentry-362D59?style=for-the-badge&logo=sentry&logoColor=white" alt="Sentry" />
 </div>
 
-*   **Visualization & UI:** React + Tailwind CSS v4
-*   **Reasoning & Intelligence:** Groq (Llama 3.3 70B) via the OpenAI Async Client
+*   **Visualization & UI:** React + Lucide Icons + Tailwind CSS v4
+*   **Reasoning & Intelligence:** Groq (Llama 3.1 8B & Llama 3.3 70B Hybrid Cluster)
 *   **Data Execution & Joins:** Official Coral SQL CLI (Live API Binding)
 
 ## 🚀 Getting Started
